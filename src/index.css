@@ -535,10 +535,10 @@ button:disabled {
   text-align: right;
 }
 
-/* ---- Welcome ---- */
+/* ---- Welcome: balanced, equal-width two-column landing page ---- */
 
-/* On desktop, the landing page is a true viewport panel: no page scroll,
-   no oversized top gap, and the footer stays inside the first screen. */
+/* Keep the welcome screen within the first viewport while giving both halves
+   exactly the same grid width. The normal form screens keep their own width. */
 .worker-app-welcome {
   height: 100%;
   min-height: 0;
@@ -547,64 +547,30 @@ button:disabled {
 
 .worker-app-welcome .worker-main-welcome {
   flex: 1 1 auto;
+  width: 100%;
+  max-width: none;
   min-height: 0;
-  max-width: 1180px;
+  padding: 16px clamp(20px, 4.2vw, 68px) 18px;
 }
 
 .worker-main-welcome {
-  max-width: 1180px;
+  max-width: none;
 }
 
 .welcome-layout {
-  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.82fr);
-  grid-template-areas: "content logo";
-  align-items: start;
-  gap: 48px;
-  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "logo content";
+  align-items: stretch;
+  gap: clamp(22px, 3.4vw, 54px);
+  width: 100%;
   height: 100%;
-  padding: 10px 0 58px;
+  min-height: 0;
+  margin: 0 auto;
 }
 
 .welcome-side {
   min-width: 0;
-}
-
-.welcome-change-request {
-  position: absolute;
-  left: 0;
-  bottom: 12px;
-  z-index: 2;
-  width: auto;
-}
-
-.welcome-content {
-  grid-area: content;
-  position: relative;
-  z-index: 1;
-  text-align: left;
-  max-width: 680px;
-}
-
-.welcome-content h1 {
-  font-size: 26px;
-  color: var(--ink-900);
-  margin-bottom: 14px;
-}
-
-.welcome-content > p {
-  font-size: 16px;
-  color: var(--slate-700);
-  line-height: 1.65;
-  margin-bottom: 24px;
-}
-
-.welcome-content .welcome-privacy-note {
-  font-size: 12px;
-  color: var(--slate-500);
-  margin-top: 18px;
-  margin-bottom: 0;
 }
 
 .welcome-logo-side {
@@ -612,41 +578,97 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--slate-200);
   pointer-events: none;
 }
 
 .welcome-logo-mark {
-  width: min(100%, 360px);
+  display: block;
+  width: min(82%, 440px);
   aspect-ratio: 335 / 221;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  opacity: 0.6;
+  opacity: 0.72;
   mix-blend-mode: multiply;
   filter: none;
 }
 
-.welcome-change-request-button {
-  position: absolute;
-  left: 0;
-  bottom: 12px;
-  z-index: 3;
-  width: 170px;
-  max-width: 70%;
-  text-align: center;
-  min-height: 32px;
-  padding: 6px 9px;
-  background: #F4C430;
-  border-color: #F4C430;
-  color: #3F3300;
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.15;
-  box-shadow: none;
+.welcome-content {
+  grid-area: content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  padding: 12px 0;
 }
 
-.welcome-change-request-button:hover:not(:disabled) {
+.welcome-content-inner {
+  width: min(100%, 560px);
+  margin: 0 auto;
+  text-align: left;
+}
+
+.welcome-content h1 {
+  max-width: 540px;
+  font-size: clamp(25px, 2.2vw, 34px);
+  line-height: 1.2;
+  color: var(--ink-900);
+  margin: 0 0 18px;
+  text-wrap: balance;
+}
+
+.welcome-content .welcome-description {
+  font-size: clamp(14.5px, 1.08vw, 16px);
+  color: var(--slate-700);
+  line-height: 1.7;
+  margin: 0 0 22px;
+}
+
+.welcome-start-button {
+  width: 100%;
+  min-height: 48px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 5px;
+  box-shadow: 0 3px 8px rgba(20, 90, 134, 0.12);
+}
+
+.welcome-content .welcome-privacy-note {
+  font-size: 12px;
+  color: var(--slate-500);
+  line-height: 1.55;
+  margin: 15px 0 0;
+}
+
+/* The edit action is intentionally quieter and centered beneath the text. */
+.welcome-layout .welcome-change-request-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-width: 180px;
+  max-width: min(100%, 250px);
+  min-height: 36px;
+  margin: 22px auto 0;
+  padding: 8px 15px;
+  border-radius: 5px;
+  background: #F4C430;
+  border: 1px solid #F4C430;
+  color: #3F3300;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+  box-shadow: none;
+  flex: 0 1 auto;
+}
+
+.welcome-layout .welcome-change-request-button:hover:not(:disabled) {
   background: #E6B61F;
   border-color: #E6B61F;
   color: #2E2500;
@@ -680,13 +702,26 @@ button:disabled {
 }
 
 @media (max-width: 960px) and (min-width: 701px) {
+  .worker-app-welcome .worker-main-welcome {
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+
   .welcome-layout {
-    grid-template-columns: minmax(0, 1fr) minmax(240px, 0.72fr);
-    gap: 28px;
+    gap: 22px;
   }
 
   .welcome-logo-mark {
-    width: 300px;
+    width: 84%;
+  }
+
+  .welcome-content h1 {
+    font-size: clamp(23px, 2.7vw, 28px);
+  }
+
+  .welcome-content .welcome-description {
+    font-size: 14px;
+    line-height: 1.6;
   }
 }
 
@@ -699,45 +734,67 @@ button:disabled {
 
   .worker-app-welcome .worker-main-welcome {
     flex: 1 1 auto;
-    min-height: 0;
-  }
-
-  .worker-main-welcome {
+    width: 100%;
     max-width: 640px;
+    min-height: 0;
+    padding: 14px 18px 22px;
   }
 
   .welcome-layout {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 22px;
-    min-height: 0;
+    gap: 12px;
     height: auto;
-    padding: 18px 0 12px;
-  }
-
-  .welcome-content {
-    order: 1;
-    max-width: none;
+    min-height: 0;
   }
 
   .welcome-logo-side {
-    order: 2;
-    min-height: 180px;
-  }
-
-  .welcome-change-request {
-    position: static;
-  }
-
-  .welcome-change-request-button {
-    position: static;
-    align-self: flex-start;
-    margin-top: 4px;
+    order: 1;
+    min-height: 135px;
+    border-right: 0;
+    border-bottom: 1px solid var(--slate-200);
+    padding-bottom: 12px;
   }
 
   .welcome-logo-mark {
-    width: min(75vw, 260px);
+    width: min(68vw, 250px);
+  }
+
+  .welcome-content {
+    order: 2;
+    display: block;
+    padding: 8px 0 0;
+  }
+
+  .welcome-content-inner {
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .welcome-content h1 {
+    font-size: clamp(24px, 6vw, 30px);
+    margin-bottom: 12px;
+  }
+
+  .welcome-content .welcome-description {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+
+  .welcome-start-button {
+    min-height: 46px;
+  }
+
+  .welcome-content .welcome-privacy-note {
+    margin-top: 12px;
+  }
+
+  .welcome-layout .welcome-change-request-button {
+    margin-top: 18px;
+    min-width: 180px;
+    max-width: min(100%, 250px);
   }
 }
 
@@ -1670,10 +1727,6 @@ button:disabled {
 
 .cr-tab {
   flex: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
   padding: 9px 10px;
   border: 1px solid var(--slate-200);
   background: var(--white);
@@ -1894,11 +1947,3 @@ button:disabled {
   line-height: 1.5;
 }
 
-
-/* Keep the welcome-page correction link narrow even when the generic trigger rule loads later. */
-.welcome-layout .welcome-change-request-button {
-  width: min(140px, 70%) !important;
-  max-width: 140px !important;
-  flex: 0 0 auto;
-  box-sizing: border-box;
-}
