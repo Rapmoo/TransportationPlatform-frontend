@@ -20,15 +20,18 @@ export function createBaseLayers(t) {
     type: 'base',
   });
 
-  const satelliteLayer = new TileLayer({
-    source: new XYZ({
-      url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-      maxZoom: 20,
-    }),
-    title: t('mapSatellite'),
-    visible: false,
-    type: 'base',
-  });
+
+const satelliteLayer = new TileLayer({
+  source: new XYZ({
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    maxZoom: 19,
+    attributions: 'Tiles © Esri and its imagery providers',
+  }),
+  title: t('mapSatellite'),
+  visible: false,
+  type: 'base',
+});
+ 
 
   return { streetLayer, satelliteLayer };
 }
