@@ -11,7 +11,9 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { fromLonLat } from 'ol/proj';
 
-const STANDARD_TILE_URL = import.meta.env.VITE_STANDARD_MAP_TILE_URL || 'https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+const STANDARD_TILE_URL =
+  import.meta.env.VITE_STANDARD_MAP_TILE_URL ||
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
 import { Style, Circle as CircleStyle, Fill, Stroke, Text } from 'ol/style';
 
 const POINT_DEFS = [

@@ -18,8 +18,7 @@ import Translate from 'ol/interaction/Translate';
 const DEFAULT_CENTER = [38.7525, 9.0192];
 const DEFAULT_ZOOM = 12;
 const PIN_ZOOM = 16;
-
-const STANDARD_TILE_URL = import.meta.env.VITE_STANDARD_MAP_TILE_URL || 'https://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+const STANDARD_TILE_URL =import.meta.env.VITE_STANDARD_MAP_TILE_URL ||'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
 const SATELLITE_TILE_URL = import.meta.env.VITE_SATELLITE_MAP_TILE_URL || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 const LABEL_TILE_URL = import.meta.env.VITE_SATELLITE_LABEL_TILE_URL || 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
 
