@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLanguage } from '../../i18n/LanguageContext';
 import 'ol/ol.css';
 import Map from 'ol/Map';
@@ -10,11 +10,11 @@ import XYZ from 'ol/source/XYZ';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { fromLonLat } from 'ol/proj';
-
-const STANDARD_TILE_URL =
-  import.meta.env.VITE_STANDARD_MAP_TILE_URL ||
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
+import { defaults as defaultControls } from 'ol/control/defaults.js';
+import FullScreen from 'ol/control/FullScreen';
 import { Style, Circle as CircleStyle, Fill, Stroke, Text } from 'ol/style';
+import { BASEMAPS } from './basemaps';
+import BaseLayerToggle from './BaseLayerToggle';
 
 const POINT_DEFS = [
   { key: 'home', color: '#0E7C86', labelKey: 'mapMarkerHome' },
@@ -23,10 +23,17 @@ const POINT_DEFS = [
   { key: 'afterWork', color: '#C0392B', labelKey: 'mapMarkerAfterWork' },
 ];
 
+// Read-only overview of the worker's four points. Same basemaps and controls
+// (zoom, full screen, Standard / Satellite) as the admin GIS map.
 export default function ReviewMap({ locations }) {
+  const shellRef = useRef(null);
   const elRef = useRef(null);
+  const baseRef = useRef(null);
+  const labelsRef = useRef(null);
   const { t } = useLanguage();
-
+  const [basemap, setBasemap] = useState('street');
+  const basemapRef = useRef(basemap);
+  basemapRef.current = basemap;
 
   useEffect(() => {
     const features = POINT_DEFS.filter((def) => locations[def.key]?.lat != null).map((def) => {
@@ -46,29 +53,62 @@ export default function ReviewMap({ locations }) {
     if (features.length === 0) return undefined;
 
     const source = new VectorSource({ features });
+    const sat = basemapRef.current === 'satellite';
     const base = new TileLayer({
       source: new XYZ({
-        url: STANDARD_TILE_URL,
-        attributions: t('mapAttributionStandard'),
+        url: sat ? BASEMAPS.satellite.url : BASEMAPS.standard.url,
+        maxZoom: 19,
+        crossOrigin: 'anonymous',
+        attributions: sat ? t('mapAttributionSatelliteFull') : '© OpenStreetMap contributors',
       }),
     });
+    const labels = new TileLayer({
+      visible: sat,
+      source: new XYZ({ url: BASEMAPS.labels.url, maxZoom: 19, crossOrigin: 'anonymous' }),
+    });
+    baseRef.current = base;
+    labelsRef.current = labels;
 
     const map = new Map({
       target: elRef.current,
-      layers: [base, new VectorLayer({ source })],
-      view: new View({ center: fromLonLat([38.7525, 9.0192]), zoom: 12 }),
-      controls: [],
+      layers: [base, labels, new VectorLayer({ source })],
+      view: new View({ center: fromLonLat([38.7525, 9.0192]), zoom: 12, maxZoom: 19 }),
+      controls: defaultControls({ rotate: false }).extend([
+        new FullScreen({ source: shellRef.current }),
+      ]),
     });
 
-    map.getView().fit(source.getExtent(), { padding: [40, 40, 40, 40], maxZoom: 16 });
+    map.getView().fit(source.getExtent(), { padding: [50, 50, 50, 50], maxZoom: 16 });
     setTimeout(() => map.updateSize(), 50);
+    const ro = new ResizeObserver(() => map.updateSize());
+    ro.observe(shellRef.current);
 
-    return () => map.setTarget(null);
+    return () => {
+      ro.disconnect();
+      map.setTarget(null);
+    };
   }, [locations, t]);
 
+  // Switch Standard / Satellite without rebuilding the map (keeps zoom and position).
+  useEffect(() => {
+    const base = baseRef.current;
+    if (!base) return;
+    const sat = basemap === 'satellite';
+    base.setSource(new XYZ({
+      url: sat ? BASEMAPS.satellite.url : BASEMAPS.standard.url,
+      maxZoom: 19,
+      crossOrigin: 'anonymous',
+      attributions: sat ? t('mapAttributionSatelliteFull') : '© OpenStreetMap contributors',
+    }));
+    labelsRef.current?.setVisible(sat);
+  }, [basemap, t]);
+
   return (
-    <div className="map-shell">
+    <div className="map-shell review-map-shell" ref={shellRef}>
       <div ref={elRef} style={{ width: '100%', height: '100%' }} />
+      <div className="review-map-toggle">
+        <BaseLayerToggle value={basemap} onChange={setBasemap} />
+      </div>
     </div>
   );
 }
