@@ -973,17 +973,24 @@ button:disabled {
 }
 
 /* ---- Full-page map (location step) ---- */
+/* Mobile-first: cards span the width at the top and bottom, map controls sit
+   on the right edge in between. Wider / shorter screens re-flow below. */
 .mapfull {
   position: fixed;
   inset: 0;
+  height: 100vh;
+  height: 100dvh;
   z-index: 1000;
   background: var(--slate-100);
+  overscroll-behavior: none;
 }
 
 .mapfull-map {
   position: absolute;
   inset: 0;
 }
+
+.mapfull-map .ol-viewport { touch-action: none; }
 
 .mapfull-top,
 .mapfull-bottom {
@@ -992,6 +999,8 @@ button:disabled {
   right: 0;
   z-index: 2;
   padding: 10px;
+  padding-left: max(10px, env(safe-area-inset-left, 0px));
+  padding-right: max(10px, env(safe-area-inset-right, 0px));
   pointer-events: none;
 }
 
@@ -1008,6 +1017,12 @@ button:disabled {
   padding: 12px;
 }
 
+.mapfull-top .mapfull-card {
+  max-height: 60vh;
+  max-height: 60dvh;
+  overflow-y: auto;
+}
+
 .mapfull-steps {
   display: flex;
   align-items: center;
@@ -1018,6 +1033,7 @@ button:disabled {
 .mapfull-pill {
   width: 30px;
   height: 30px;
+  flex: none;
   border-radius: 50%;
   border: 2px solid var(--pill);
   background: var(--white);
@@ -1036,6 +1052,7 @@ button:disabled {
   margin-left: auto;
   font-size: 12px;
   color: var(--slate-500);
+  white-space: nowrap;
 }
 
 .mapfull-title {
@@ -1057,7 +1074,7 @@ button:disabled {
   gap: 8px;
 }
 
-.mapfull-primary { flex: 1; }
+.mapfull-primary { flex: 1; min-width: 0; }
 
 .mapfull-credit {
   margin-top: 6px;
@@ -1072,10 +1089,6 @@ button:disabled {
   left: auto;
   right: 12px;
   bottom: 50%;
-}
-
-@media (max-width: 480px) {
-  .mapfull-actions .btn { padding-left: 10px; padding-right: 10px; }
 }
 
 /* basemap switch (standard / satellite) */
@@ -1105,6 +1118,22 @@ button:disabled {
 
 .mapfull-basemap button + button { border-top: 1px solid var(--slate-200); }
 .mapfull-basemap button.is-active { background: var(--ink-800); color: var(--white); }
+
+@media (max-width: 480px) {
+  .mapfull-actions .btn { padding-left: 10px; padding-right: 10px; }
+  .mapfull-card { padding: 10px; }
+}
+
+@media (max-width: 340px) {
+  .mapfull-actions { flex-wrap: wrap; }
+  .mapfull-primary { flex-basis: 100%; }
+}
+
+/* Short landscape screens (phones on their side): tighter cards so more map shows. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .mapfull-card { padding: 8px 10px; }
+  .mapfull-credit { margin-top: 4px; }
+}
 
 /* ---- Worker identity / secure access ---- */
 .access-intro-icon {
@@ -1946,4 +1975,3 @@ button:disabled {
   font-size: 13px;
   line-height: 1.5;
 }
-

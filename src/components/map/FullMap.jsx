@@ -11,16 +11,15 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { fromLonLat, toLonLat } from 'ol/proj';
 import { defaults as defaultControls } from 'ol/control/defaults.js';
+import { defaults as defaultInteractions } from 'ol/interaction/defaults.js';
 import { Style, Circle as CircleStyle, Fill, Stroke, Text } from 'ol/style';
 import Translate from 'ol/interaction/Translate';
+import { BASEMAPS } from './basemaps';
 
 // Addis Ababa centre — default view before any pin exists.
 const DEFAULT_CENTER = [38.7525, 9.0192];
 const DEFAULT_ZOOM = 12;
 const PIN_ZOOM = 16;
-const STANDARD_TILE_URL =import.meta.env.VITE_STANDARD_MAP_TILE_URL ||'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}';
-const SATELLITE_TILE_URL = import.meta.env.VITE_SATELLITE_MAP_TILE_URL || 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-const LABEL_TILE_URL = import.meta.env.VITE_SATELLITE_LABEL_TILE_URL || 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
 
 function hexToRgba(hex, alpha) {
   const h = hex.replace('#', '');
@@ -81,23 +80,27 @@ export default function FullMap({ points, activeKey, onPlace, focus, basemap = '
     // place-name overlay (only shown together with the satellite layer).
     const standard = new TileLayer({
       source: new XYZ({
-        url: STANDARD_TILE_URL,
+        url: BASEMAPS.standard.url,
+        maxZoom: BASEMAPS.standard.maxZoom,
+        crossOrigin: 'anonymous',
         attributions: tRef.current('mapAttributionStandard'),
       }),
     });
     const satellite = new TileLayer({
       visible: false,
       source: new XYZ({
-        url: SATELLITE_TILE_URL,
-        maxZoom: 19,
+        url: BASEMAPS.satellite.url,
+        maxZoom: BASEMAPS.satellite.maxZoom,
+        crossOrigin: 'anonymous',
         attributions: tRef.current('mapAttributionSatelliteFull'),
       }),
     });
     const labels = new TileLayer({
       visible: false,
       source: new XYZ({
-        url: LABEL_TILE_URL,
-        maxZoom: 19,
+        url: BASEMAPS.labels.url,
+        maxZoom: BASEMAPS.labels.maxZoom,
+        crossOrigin: 'anonymous',
       }),
     });
     layersRef.current = { standard, satellite, labels };
@@ -112,6 +115,8 @@ export default function FullMap({ points, activeKey, onPlace, focus, basemap = '
         maxZoom: 19,
       }),
       controls: defaultControls({ attribution: false, rotate: false }),
+      // Pinch-zoom / two-finger pan on touch screens, no accidental rotation.
+      interactions: defaultInteractions({ altShiftDragRotate: false, pinchRotate: false }),
     });
     mapRef.current = map;
 
@@ -133,11 +138,16 @@ export default function FullMap({ points, activeKey, onPlace, focus, basemap = '
 
     // Keep tiles sized correctly when the viewport changes (rotation, mobile bars).
     const ro = new ResizeObserver(() => map.updateSize());
+    const onViewport = () => map.updateSize();
+    window.addEventListener('orientationchange', onViewport);
+    window.visualViewport?.addEventListener('resize', onViewport);
     ro.observe(elRef.current);
     setTimeout(() => map.updateSize(), 50);
 
     return () => {
       ro.disconnect();
+      window.removeEventListener('orientationchange', onViewport);
+      window.visualViewport?.removeEventListener('resize', onViewport);
       map.setTarget(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

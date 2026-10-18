@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useWorkerForm, STEPS } from '../context/WorkerFormContext';
 import Field from '../components/common/Field';
@@ -10,6 +10,7 @@ export default function FormStep() {
   const { t } = useLanguage();
   const { personal, updatePersonalField, setStep, syncLocationAddresses, editInfo, resetAll } = useWorkerForm();
   const [errors, setErrors] = useState({});
+  const formRef = useRef(null);
 
   // Answers are always entered in English, regardless of interface language.
   // Short text answers are automatically normalized to consistent title case.
@@ -32,13 +33,34 @@ export default function FormStep() {
     setStep(STEPS.LOCATIONS);
   };
 
+  // Enter moves to the next input (like Tab) instead of doing nothing; on the
+  // last input it continues to the next step. Skips read-only/disabled inputs
+  // and ignores Enter while an IME (e.g. Amharic keyboard) is composing text.
+  const handleEnterKey = (e) => {
+    if (e.key !== 'Enter' || e.nativeEvent.isComposing || e.keyCode === 229) return;
+    const el = e.target;
+    if (el.tagName !== 'INPUT') return;
+    e.preventDefault();
+    const inputs = Array.from(
+      formRef.current.querySelectorAll('input:not([type="hidden"]):not([readonly]):not([disabled])')
+    );
+    const next = inputs[inputs.indexOf(el) + 1];
+    if (next) {
+      next.focus();
+      next.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    } else {
+      el.blur();
+      handleContinue();
+    }
+  };
+
   const cancelEditing = () => {
     clearWorkerSessionToken();
     resetAll();
   };
 
   return (
-    <div>
+    <div ref={formRef} onKeyDown={handleEnterKey}>
       {editInfo && (
         <div className="card edit-mode-banner">
           <div className="eyebrow">{t('editModeEyebrow')}</div>

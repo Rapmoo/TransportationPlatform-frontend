@@ -201,7 +201,7 @@ export const translations = {
     mapMarkerStart: 'S',
     mapMarkerBoarding: 'B',
     mapMarkerAfterWork: 'W',
-    mapAttributionStandard: '© OpenStreetMap contributors © CARTO',
+    mapAttributionStandard: '© OpenStreetMap contributors',
     mapAttributionSatellite: 'Tiles © Esri — Maxar, Earthstar Geographics',
     mapAttributionSatelliteFull: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
     // Footer
@@ -478,7 +478,7 @@ export const translations = {
     mapMarkerStart: 'መ',
     mapMarkerBoarding: 'ው',
     mapMarkerAfterWork: 'ሥ',
-    mapAttributionStandard: '© OpenStreetMap አበርካቾች © CARTO',
+    mapAttributionStandard: '© OpenStreetMap አበርካቾች',
     mapAttributionSatellite: 'ካርታ  © Esri — Maxar, Earthstar Geographics',
     mapAttributionSatelliteFull: 'ካርታ © Esri — ምንጭ: Esri, Maxar, Earthstar Geographics እና GIS User Community',
     // Footer
@@ -758,7 +758,7 @@ export const translations = {
     mapMarkerStart: 'M',
     mapMarkerBoarding: 'Bu',
     mapMarkerAfterWork: 'H',
-    mapAttributionStandard: '© OpenStreetMap gumaachitoota © CARTO',
+    mapAttributionStandard: '© OpenStreetMap gumaachitoota',
     mapAttributionSatellite: 'Kaartaa © Esri — Maxar, Earthstar Geographics',
     mapAttributionSatelliteFull: 'Kaartaa © Esri — Madda: Esri, Maxar, Earthstar Geographics fi GIS User Community',
     // Footer

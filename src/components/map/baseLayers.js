@@ -1,5 +1,5 @@
 import TileLayer from 'ol/layer/Tile';
-import OSM from 'ol/source/OSM';
+import { BASEMAPS } from './basemaps';
 import XYZ from 'ol/source/XYZ';
 import { Circle as CircleStyle, Fill, Stroke, Style, Text } from 'ol/style';
 
@@ -14,7 +14,12 @@ export const PIN_ZOOM = 16;
  */
 export function createBaseLayers(t) {
   const streetLayer = new TileLayer({
-    source: new OSM(),
+    source: new XYZ({
+      url: BASEMAPS.standard.url,
+      maxZoom: BASEMAPS.standard.maxZoom,
+      crossOrigin: 'anonymous',
+      attributions: '© OpenStreetMap contributors',
+    }),
     title: t('mapStreet'),
     visible: true,
     type: 'base',
@@ -23,8 +28,9 @@ export function createBaseLayers(t) {
 
 const satelliteLayer = new TileLayer({
   source: new XYZ({
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    maxZoom: 19,
+    url: BASEMAPS.satellite.url,
+    maxZoom: BASEMAPS.satellite.maxZoom,
+    crossOrigin: 'anonymous',
     attributions: 'Tiles © Esri and its imagery providers',
   }),
   title: t('mapSatellite'),
