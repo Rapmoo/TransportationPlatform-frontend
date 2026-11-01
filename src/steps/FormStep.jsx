@@ -3,7 +3,9 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { useWorkerForm, STEPS } from '../context/WorkerFormContext';
 import Field from '../components/common/Field';
 import StepProgress from '../components/common/StepProgress';
-import { validatePersonalForm, capitalizeEnglishWords } from '../utils/validation';
+import {
+  validatePersonalForm, capitalizeEnglishWords, digitsOnly, sanitizeName, sanitizePlace, hasMinLetters,
+} from '../utils/validation';
 import { clearWorkerSessionToken } from '../api/workerApi';
 
 export default function FormStep() {
@@ -18,11 +20,75 @@ export default function FormStep() {
     'homeAddress', 'startPointAddress', 'boardingAddress', 'afterWorkAddress',
     'busNumberGoing', 'busNumberReturn'];
 
+  const NAME_FIELDS = ['firstName', 'middleName', 'lastName'];
+  const PLACE_FIELDS = ['organization', 'homeAddress', 'startPointAddress',
+    'boardingAddress', 'afterWorkAddress'];
+
+  const setFieldError = (field, message) => setErrors((prev) => {
+    const next = { ...prev };
+    if (message) next[field] = message; else delete next[field];
+    return next;
+  });
+
+  // Filters disallowed characters as the user types and flags the field
+  // immediately when something was rejected.
   const handleChange = (field) => (e) => {
-    const value = CAPITALIZED.includes(field)
-      ? capitalizeEnglishWords(e.target.value)
-      : e.target.value;
-    updatePersonalField(field, value);
+    const raw = e.target.value;
+    let clean = raw;
+    let rejectMsg = '';
+    if (NAME_FIELDS.includes(field)) {
+      clean = sanitizeName(raw);
+      rejectMsg = t('errorNameLettersOnly');
+    } else if (PLACE_FIELDS.includes(field)) {
+      clean = sanitizePlace(raw);
+      rejectMsg = t('errorNoSpecialChars');
+    } else if (field === 'busNumberGoing' || field === 'busNumberReturn') {
+      clean = digitsOnly(raw, 10);
+      rejectMsg = t('errorDigitsOnly');
+    } else if (field === 'phoneNumber') {
+      clean = digitsOnly(raw, 10);
+      rejectMsg = t('errorPhoneInvalid');
+    }
+    if (CAPITALIZED.includes(field) && !/^(busNumber|phone)/.test(field)) {
+      clean = capitalizeEnglishWords(clean);
+    }
+    updatePersonalField(field, clean);
+    const stillTooShort = errors[field] === t('errorTooFewLetters')
+      && (NAME_FIELDS.includes(field) || PLACE_FIELDS.includes(field))
+      && !hasMinLetters(clean);
+    setFieldError(field, clean !== raw ? rejectMsg : (stillTooShort ? errors[field] : ''));
+  };
+
+  // Text fields need at least 3 letters: tell the user as soon as they leave
+  // the field (or press Enter/Tab) with something too short like "ab".
+  const checkMinLetters = (field) => () => {
+    const v = (personal[field] || '').trim();
+    if (v.length > 0 && !hasMinLetters(v)) setFieldError(field, t('errorTooFewLetters'));
+  };
+
+  const handleDigitField = (field, max) => (e) => {
+    const raw = e.target.value;
+    const clean = digitsOnly(raw, max);
+    updatePersonalField(field, clean);
+    setFieldError(field, clean !== raw ? t('errorDigitsOnly') : '');
+  };
+
+  // Fayda ID: tell the user right away (on leaving the field) if it is not 16 digits.
+  const checkFaydaLength = () => {
+    const len = (personal.faydaId || '').length;
+    if (len > 0 && len !== 16) {
+      setFieldError('faydaId', t('errorFaydaIdLength').replace('{n}', len));
+    }
+  };
+
+  const checkPublicBusIdLength = () => {
+    const len = (personal.publicBusId || '').length;
+    if (len > 0 && len !== 16) setFieldError('publicBusId', t('errorPublicBusIdInvalid'));
+  };
+
+  const checkPhone = () => {
+    const v = personal.phoneNumber || '';
+    if (v.length > 0 && !/^0[79]\d{8}$/.test(v)) setFieldError('phoneNumber', t('errorPhoneInvalid'));
   };
 
   const handleContinue = () => {
@@ -82,6 +148,7 @@ export default function FormStep() {
             autoCapitalize="words"
             value={personal.firstName}
             onChange={handleChange('firstName')}
+            onBlur={checkMinLetters('firstName')}
             placeholder={t('fieldFirstNamePlaceholder')}
             autoComplete="given-name"
           />
@@ -92,6 +159,7 @@ export default function FormStep() {
             autoCapitalize="words"
             value={personal.middleName}
             onChange={handleChange('middleName')}
+            onBlur={checkMinLetters('middleName')}
             placeholder={t('fieldMiddleNamePlaceholder')}
             autoComplete="additional-name"
           />
@@ -102,6 +170,7 @@ export default function FormStep() {
             autoCapitalize="words"
             value={personal.lastName}
             onChange={handleChange('lastName')}
+            onBlur={checkMinLetters('lastName')}
             placeholder={t('fieldLastNamePlaceholder')}
             autoComplete="family-name"
           />
@@ -113,7 +182,8 @@ export default function FormStep() {
             pattern="\d*"
             maxLength={16}
             value={personal.faydaId}
-            onChange={(e) => updatePersonalField('faydaId', e.target.value.replace(/\D/g, '').slice(0, 16))}
+            onChange={handleDigitField('faydaId', 16)}
+            onBlur={checkFaydaLength}
             placeholder={t('fieldFaydaIdPlaceholder')}
             autoComplete="off"
             readOnly={Boolean(editInfo)}
@@ -123,8 +193,11 @@ export default function FormStep() {
         <Field label={t('fieldPhoneNumber')} required error={errors.phoneNumber}>
           <input
             type="tel"
+            inputMode="numeric"
+            maxLength={10}
             value={personal.phoneNumber}
             onChange={handleChange('phoneNumber')}
+            onBlur={checkPhone}
             placeholder={t('fieldPhoneNumberPlaceholder')}
             autoComplete="tel"
           />
@@ -138,6 +211,7 @@ export default function FormStep() {
             type="text"
             value={personal.organization}
             onChange={handleChange('organization')}
+            onBlur={checkMinLetters('organization')}
             placeholder={t('fieldOrganizationPlaceholder')}
           />
         </Field>
@@ -152,6 +226,7 @@ export default function FormStep() {
                 type="text"
                 value={personal.homeAddress}
                 onChange={handleChange('homeAddress')}
+                onBlur={checkMinLetters('homeAddress')}
                 placeholder={t('fieldHomeAddressPlaceholder')}
               />
             </Field>
@@ -161,13 +236,15 @@ export default function FormStep() {
               type="text"
               value={personal.startPointAddress}
               onChange={handleChange('startPointAddress')}
+              onBlur={checkMinLetters('startPointAddress')}
               placeholder={t('fieldStartPointPlaceholder')}
             />
           </Field>
           <Field label={t('fieldBusNumberGoing')} required error={errors.busNumberGoing}>
             <input
               type="text"
-              maxLength={50}
+              inputMode="numeric"
+              maxLength={10}
               value={personal.busNumberGoing}
               onChange={handleChange('busNumberGoing')}
               placeholder={t('fieldBusNumberGoingPlaceholder')}
@@ -180,6 +257,7 @@ export default function FormStep() {
                 type="text"
                 value={personal.boardingAddress}
                 onChange={handleChange('boardingAddress')}
+                onBlur={checkMinLetters('boardingAddress')}
                 placeholder={t('fieldBoardingAddressPlaceholder')}
               />
             </Field>
@@ -189,13 +267,15 @@ export default function FormStep() {
               type="text"
               value={personal.afterWorkAddress}
               onChange={handleChange('afterWorkAddress')}
+              onBlur={checkMinLetters('afterWorkAddress')}
               placeholder={t('fieldAfterWorkAddressPlaceholder')}
             />
           </Field>
           <Field label={t('fieldBusNumberReturn')} required error={errors.busNumberReturn}>
             <input
               type="text"
-              maxLength={50}
+              inputMode="numeric"
+              maxLength={10}
               value={personal.busNumberReturn}
               onChange={handleChange('busNumberReturn')}
               placeholder={t('fieldBusNumberReturnPlaceholder')}
@@ -214,7 +294,8 @@ export default function FormStep() {
             pattern="\d*"
             maxLength={16}
             value={personal.publicBusId}
-            onChange={(e) => updatePersonalField('publicBusId', e.target.value.replace(/\D/g, '').slice(0, 16))}
+            onChange={handleDigitField('publicBusId', 16)}
+            onBlur={checkPublicBusIdLength}
             placeholder={t('fieldPublicBusIdPlaceholder')}
             autoComplete="off"
           />

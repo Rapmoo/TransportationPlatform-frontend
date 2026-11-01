@@ -1,4 +1,4 @@
-const PHONE_RE = /^(?:\+?251|0)(?:9|7)\d{8}$/;
+const PHONE_RE = /^0[79]\d{8}$/;
 
 export function trimmed(value) {
   return typeof value === 'string' ? value.trim() : value;
@@ -39,8 +39,41 @@ export function isRequiredFilled(value) {
 }
 
 export function isValidPhone(value) {
-  const compact = trimmed(value).replace(/[\s-]/g, '');
-  return PHONE_RE.test(compact);
+  return PHONE_RE.test(trimmed(value) || '');
+}
+
+// ---- Input sanitizers (used while typing) -------------------------------
+export const digitsOnly = (value, max) => {
+  const d = String(value ?? '').replace(/\D/g, '');
+  return max ? d.slice(0, max) : d;
+};
+
+// Text answers need at least 3 letters (rejects entries like "ab" or "jk").
+export const MIN_LETTERS = 3;
+export const hasMinLetters = (value) => (
+  (String(value ?? '').match(/\p{L}/gu) || []).length >= MIN_LETTERS
+);
+
+// Names: letters, spaces, hyphen, apostrophe. No digits or symbols.
+const NAME_BAD_RE = /[^\p{Script=Latin}\p{M}\s'’-]/gu;
+export const sanitizeName = (value) => String(value ?? '').replace(NAME_BAD_RE, '');
+export const isValidName = (value) => {
+  const v = trimmed(value) || '';
+  return v.length > 0 && !/[^\p{Script=Latin}\p{M}\s'’-]/u.test(v) && /\p{L}/u.test(v);
+};
+
+// Places (workplace, residential area, boarding points): letters, digits,
+// spaces and . - ' only. No other special characters.
+const PLACE_BAD_RE = /[^\p{Script=Latin}\p{M}\d\s.'’-]/gu;
+export const sanitizePlace = (value) => String(value ?? '').replace(PLACE_BAD_RE, '');
+export const isValidPlace = (value) => {
+  const v = trimmed(value) || '';
+  return v.length > 0 && !/[^\p{Script=Latin}\p{M}\d\s.'’-]/u.test(v) && /\p{L}/u.test(v);
+};
+
+// Public bus ID: 16 digits.
+export function isValidPublicBusId(value) {
+  return /^\d{16}$/.test(trimmed(value) || '');
 }
 
 // Fayda ID: 16-digit national ID number.
@@ -91,6 +124,7 @@ export function validatePersonalForm(values, t) {
     'afterWorkAddress',
     'busNumberGoing',
     'busNumberReturn',
+    'publicBusId',
   ];
 
   requiredFields.forEach((field) => {
@@ -99,14 +133,25 @@ export function validatePersonalForm(values, t) {
     }
   });
 
-  const englishTextFields = [
-    'firstName', 'middleName', 'lastName', 'organization', 'homeAddress',
-    'startPointAddress', 'boardingAddress', 'afterWorkAddress',
-    'busNumberGoing', 'busNumberReturn',
-  ];
-  englishTextFields.forEach((field) => {
-    if (isRequiredFilled(values[field]) && !hasOnlyEnglishLetters(values[field])) {
-      errors[field] = t('errorEnglishOnly');
+  ['firstName', 'middleName', 'lastName'].forEach((field) => {
+    if (!errors[field] && !isValidName(values[field])) {
+      errors[field] = t('errorNameLettersOnly');
+    } else if (!errors[field] && !hasMinLetters(values[field])) {
+      errors[field] = t('errorTooFewLetters');
+    }
+  });
+
+  ['organization', 'homeAddress', 'startPointAddress', 'boardingAddress', 'afterWorkAddress'].forEach((field) => {
+    if (!errors[field] && !isValidPlace(values[field])) {
+      errors[field] = t('errorNoSpecialChars');
+    } else if (!errors[field] && !hasMinLetters(values[field])) {
+      errors[field] = t('errorTooFewLetters');
+    }
+  });
+
+  ['busNumberGoing', 'busNumberReturn'].forEach((field) => {
+    if (!errors[field] && !/^\d+$/.test(trimmed(values[field]))) {
+      errors[field] = t('errorDigitsOnly');
     }
   });
 
@@ -116,6 +161,10 @@ export function validatePersonalForm(values, t) {
 
   if (!errors.phoneNumber && !isValidPhone(values.phoneNumber)) {
     errors.phoneNumber = t('errorPhoneInvalid');
+  }
+
+  if (!errors.publicBusId && !isValidPublicBusId(values.publicBusId)) {
+    errors.publicBusId = t('errorPublicBusIdInvalid');
   }
 
   return errors;
